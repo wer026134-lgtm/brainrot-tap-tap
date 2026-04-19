@@ -1,76 +1,141 @@
-let score = 0;
-let tapCount = 0;
-const scoreValue = document.getElementById('scoreValue');
-const brainrot = document.getElementById('brainrot');
-const tapCountSpan = document.getElementById('tapCount');
-
-// Инициализация Telegram WebApp
 const tg = window.Telegram.WebApp;
+
 tg.ready();
 tg.expand();
 
-// 1. Загрузка прогресса из URL (если бот передал его при открытии)
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('score')) score = parseInt(urlParams.get('score')) || 0;
-if (urlParams.has('taps')) tapCount = parseInt(urlParams.get('taps')) || 0;
-scoreValue.textContent = score;
-tapCountSpan.textContent = tapCount;
+const STORAGE_KEY = 'brainrot_progress';
 
-// 2. Настройка нативной кнопки Telegram для сохранения
-tg.MainButton.setText('💾 Сохранить и выйти');
-tg.MainButton.show();
-tg.MainButton.enable();
+let score = 0;
+let tapCount = 0;
 
-// ВАЖНО: правильно обрабатываем нажатие кнопки
-tg.onEvent('mainButtonClicked', () => {
-    // Отправляем данные боту
-    const payload = JSON.stringify({ score, tapCount });
-    tg.sendData(payload);
-    
-    // Закрываем WebApp после отправки
-    tg.close();
-});
+const scoreValue = document.getElementById('scoreValue');
+const tapCountSpan = document.getElementById('tapCount');
+const brainrot = document.getElementById('brainrot');
 
-function createBrainParticles(x, y) {
-    const emojis = ['🧠', '💀', '⚡', '🌀', '💥', '🔊', '🎮', '🧟', '👁️', '🕳️', '💜', '🌀'];
-    for (let i = 0; i < 12; i++) {
-        const particle = document.createElement('div');
-        particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        particle.className = 'brain-particle';
-        particle.style.left = (x + (Math.random() - 0.5) * 60) + 'px';
-        particle.style.top = (y + (Math.random() - 0.5) * 50) + 'px';
-        particle.style.fontSize = (18 + Math.random() * 24) + 'px';
-        particle.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
-        document.body.appendChild(particle);
-        setTimeout(() => particle.remove(), 800);
+function updateUI() {
+  if (scoreValue) scoreValue.textContent = score;
+  if (tapCountSpan) tapCountSpan.textContent = tapCount;
+}
+
+function saveLocalProgress() {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        score,
+        tapCount,
+        updatedAt: Date.now()
+      })
+    );
+  } catch (e) {
+    console.error('Ошибка сохранения в localStorage:', e);
+  }
+}
+
+function loadLocalProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+
+    const data = JSON.parse(raw);
+
+    score = Number(data.score) || 0;
+    tapCount = Number(data.tapCount) || 0;
+
+    return true;
+  } catch (e) {
+    console.error('Ошибка загрузки из localStorage:', e);
+    return false;
+  }
+}
+
+function loadProgressFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+
+    const urlScore = Number(params.get('score'));
+    const urlTaps = Number(params.get('taps'));
+
+    if (!Number.isNaN(urlScore) && urlScore > score) {
+      score = urlScore;
     }
+
+    if (!Number.isNaN(urlTaps) && urlTaps > tapCount) {
+      tapCount = urlTaps;
+    }
+  } catch (e) {
+    console.error('Ошибка чтения параметров URL:', e);
+  }
 }
 
-function vibrate() {
-    if (navigator.vibrate) navigator.vibrate(30);
+function sendProgressToBot() {
+  try {
+    const payload = {
+      score,
+      tapCount
+    };
+
+    tg.sendData(JSON.stringify(payload));
+    console.log('Прогресс отправлен в бота:', payload);
+  } catch (e) {
+    console.error('Ошибка отправки данных в бота:', e);
+  }
 }
 
-brainrot.addEventListener('click', () => {
-    score++;
-    tapCount++;
-    scoreValue.textContent = score;
-    tapCountSpan.textContent = tapCount;
+function handleTap() {
+  score += 1;
+  tapCount += 1;
 
-    const counterWrapper = document.querySelector('.counter-wrapper');
-    counterWrapper.classList.add('hit-effect');
-    setTimeout(() => counterWrapper.classList.remove('hit-effect'), 200);
+  updateUI();
+  saveLocalProgress();
+}
 
-    brainrot.style.transform = 'scale(0.92)';
-    setTimeout(() => brainrot.style.transform = '', 100);
+function setupMainButton() {
+  tg.MainButton.setText('Сохранить и выйти');
+  tg.MainButton.show();
+  tg.MainButton.enable();
 
-    const rect = brainrot.getBoundingClientRect();
-    createBrainParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    vibrate();
-});
+  tg.onEvent('mainButtonClicked', () => {
+    saveLocalProgress();
+    sendProgressToBot();
+    tg.close();
+  });
+}
 
-window.addEventListener('load', () => {
-    console.log('🧠 Брейнрот Тапальщик готов!');
-    brainrot.style.animation = 'none';
-    brainrot.offsetHeight;
-    brainrot.style.animation = 'float 2s ease-in-out infinite';
-});
+function autosaveBeforeClose() {
+  saveLocalProgress();
+
+  // Пытаемся отправить прогресс перед закрытием.
+  // Не во всех сценариях Telegram гарантированно доставит sendData,
+  // но локальное сохранение точно сработает.
+  try {
+    sendProgressToBot();
+  } catch (e) {
+    console.error('Ошибка автосохранения перед закрытием:', e);
+  }
+}
+
+function init() {
+  loadLocalProgress();
+  loadProgressFromUrl();
+  saveLocalProgress();
+  updateUI();
+  setupMainButton();
+
+  if (brainrot) {
+    brainrot.addEventListener('click', handleTap);
+  } else {
+    console.error('Элемент #brainrot не найден');
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      autosaveBeforeClose();
+    }
+  });
+
+  window.addEventListener('beforeunload', autosaveBeforeClose);
+  window.addEventListener('pagehide', autosaveBeforeClose);
+}
+
+init();

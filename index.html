@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Брейнрот Тапальщик 🧠</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Брейнрот Тапальщик 🧠</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Официальный SDK Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <h1>таполка лучше хомяка "брейнротики тап тап"</h1>
-  <p>🧠 тапаешь на брейнрота чтобы прокачать его и получить валюту 💀</p>
-  
-  <button id="brainrot">
-    <img src="https://landofgames.ru/uploads/posts/2025-12/medium/1766056685_1.webp" alt="brainrot" width="100" height="70">
-  </button>
-  
-  <div class="counter-wrapper">
-    <h2>
-      <span class="label">заработано=</span>
-      <span class="value" id="scoreValue">0</span>
-    </h2>
-  </div>
-  
-  <div class="stats">
-    <span>⚡ тапов: <span id="tapCount">0</span></span>
-  </div>
-  
-  <script src="script.js"></script>
+    <h1>Брейнрот Тапальщик 🧠</h1>
+    <p>таполка лучше хомяка "брейнротики тап тап"</p>
+    <p>🧠 тапаешь на брейнрота чтобы прокачать его и получить валюту 💀</p>
+
+    <div class="counter-wrapper">
+        <h2>
+            <span class="label">заработано=</span>
+            <span id="scoreValue" class="value">0</span>
+        </h2>
+    </div>
+
+    <button id="brainrot">
+        <img src="https://landofgames.ru/uploads/posts/2025-12/medium/1766056685_1.webp" alt="Brainrot">
+    </button>
+
+    <div class="stats">
+        ⚡ тапов: <span id="tapCount">0</span>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

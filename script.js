@@ -7,7 +7,7 @@ const tapCountSpan = document.getElementById('tapCount');
 // Инициализация Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.ready();
-tg.expand(); // Разворачиваем на весь экран
+tg.expand();
 
 // 1. Загрузка прогресса из URL (если бот передал его при открытии)
 const urlParams = new URLSearchParams(window.location.search);
@@ -20,10 +20,15 @@ tapCountSpan.textContent = tapCount;
 tg.MainButton.setText('💾 Сохранить и выйти');
 tg.MainButton.show();
 tg.MainButton.enable();
-tg.MainButton.onClick(() => {
-    // Отправляем данные боту и ЗАКРЫВАЕМ WebApp (стандартное поведение tg.sendData)
+
+// ВАЖНО: правильно обрабатываем нажатие кнопки
+tg.onEvent('mainButtonClicked', () => {
+    // Отправляем данные боту
     const payload = JSON.stringify({ score, tapCount });
     tg.sendData(payload);
+    
+    // Закрываем WebApp после отправки
+    tg.close();
 });
 
 function createBrainParticles(x, y) {

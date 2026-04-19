@@ -30,4 +30,13 @@
 
     <script src="script.js"></script>
 </body>
+<script>
+    // Проверка Telegram WebApp
+    window.onerror = function(msg, url, line, col, error) {
+        console.error('Error:', msg, 'at', line, ':', error);
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+        }
+    };
+</script>
 </html>
